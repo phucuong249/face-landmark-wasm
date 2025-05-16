@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Landmark Detection Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #video, #overlay {
+            width: 640px;
+            height: 480px;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 8px 16px;
+            margin-right: 10px;
+        }
+        .status {
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .threading-info {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        // Check for SIMD support
+        function checkSIMDSupport() {
+            if (typeof WebAssembly === 'object' && 
+                typeof WebAssembly.validate === 'function') {
+                const simdTest = new Uint8Array([
+                    0x00, 0x61, 0x73, 0x6d, // WASM_BINARY_MAGIC
+                    0x01, 0x00, 0x00, 0x00, // WASM_BINARY_VERSION
+                    0x01, 0x05, 0x01, 0x60, 0x00, 0x01, 0x7b, // Type section
+                    0x03, 0x02, 0x01, 0x00, // Function section
+                    0x07, 0x05, 0x01, 0x01, 0x65, 0x00, 0x00, // Export section
+                    0x0a, 0x09, 0x01, 0x07, 0x00, 0xfd, 0x0f, 0x00, 0x00, 0x0b // Code section with SIMD instruction
+                ]);
+                return WebAssembly.validate(simdTest);
+            }
+            return false;
+        }
+        
+        // Also define the function that will hold the module
+        var Module = {
+            onRuntimeInitialized: function() {
+                // Check if SIMD is supported
+                const simdSupported = checkSIMDSupport();
+                console.log("SIMD support:", simdSupported ? "AVAILABLE" : "NOT AVAILABLE");
+                
+                // Store SIMD support status in a global variable
+                window.simdSupported = simdSupported;
+                
+                // Add SIMD status to the threading info element when it's available
+                setTimeout(() => {
+                    const threadingInfoElement = document.getElementById('threading-info');
+                    if (threadingInfoElement) {
+                        threadingInfoElement.innerHTML += `<br>SIMD support: ${simdSupported ? "Available" : "Not available"}`;
+                    }
+                }, 100);
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Landmark Detection Demo</h1>
+        
+        <div class="status" id="status">
+            Status: Loading WASM module...
+        </div>
+        
+        <div class="threading-info" id="threading-info">
+            Checking threading support...
+        </div>
+        
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">Start Camera</button>
+            <button id="detectBtn" disabled>Detect Landmarks</button>
+            <button id="continuousBtn" disabled>Continuous Detection</button>
+            <button id="stopBtn" disabled>Stop Camera</button>
+        </div>
+        
+        <div>
+            <p><strong>Instructions:</strong></p>
+            <ol>
+                <li>Click "Start Camera" to enable your webcam</li>
+                <li>Click "Detect Landmarks" to process a single frame</li>
+                <li>Click "Continuous Detection" to process frames continuously</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Load the WASM module (models are preloaded) -->
+    <script src="lnm_face_landmark_wasm.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
